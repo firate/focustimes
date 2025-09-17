@@ -28,3 +28,12 @@ $ chmod +x build.sh
 $ ./build.sh
 ```
 
+## Installation
+
+1. Drag `focustimes.app` into your `/Applications` folder.
+2. Because the app is not signed, macOS may block it.  
+   To fix this, open Terminal and run:
+
+```bash
+xattr -d com.apple.quarantine /Applications/focustimes.app
+```
