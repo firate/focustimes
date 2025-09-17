@@ -135,6 +135,12 @@ class FocusTimesApp(rumps.App):
             "This Year": get_total(year_start),
         }
 
+        # Son 10 kayıt
+        cur.execute(
+            "SELECT start_time, end_time, duration, tag FROM sessions ORDER BY start_time DESC LIMIT 10"
+        )
+        last_sessions = cur.fetchall()
+
         # Tag bazlı (son 50 etiket)
         cur.execute(
             """
@@ -173,6 +179,20 @@ class FocusTimesApp(rumps.App):
         </head>
         <body>
             <h1>focustimes - Statistics</h1>
+            <h2>Last 10 Sessions</h2>
+            <table>
+                <tr><th>Start</th><th>End</th><th>Duration</th><th>Tag</th></tr>
+        """
+        for start_time, end_time, duration, tag in last_sessions:
+            start_str = datetime.fromisoformat(start_time).strftime("%Y-%m-%d %H:%M:%S")
+            end_str = datetime.fromisoformat(end_time).strftime("%Y-%m-%d %H:%M:%S")
+            hours = duration // 3600
+            minutes = (duration % 3600) // 60
+            duration_str = f"{hours}h {minutes}m"
+            html += f"<tr><td>{start_str}</td><td>{end_str}</td><td>{duration_str}</td><td>{tag}</td></tr>"
+        html += "</table>"
+
+        html += """
             <h2>Total Durations</h2>
             <table>
                 <tr><th>Period</th><th>Duration</th></tr>
