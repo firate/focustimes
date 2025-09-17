@@ -1,0 +1,20 @@
+-- CREATE TABLE sessions (
+--     id INTEGER PRIMARY KEY AUTOINCREMENT,
+--     name TEXT,
+--     start_time TEXT,
+--     end_time TEXT,
+--     duration_seconds INTEGER
+-- );
+
+-- CREATE TABLE tags (
+--     id INTEGER PRIMARY KEY AUTOINCREMENT,
+--     name TEXT UNIQUE
+-- );
+-- 
+-- CREATE TABLE session_tags (
+--     session_id INTEGER,
+--     tag_id INTEGER,
+--     FOREIGN KEY(session_id) REFERENCES sessions(id),
+--     FOREIGN KEY(tag_id) REFERENCES tags(id),
+--     PRIMARY KEY(session_id, tag_id)
+-- );
