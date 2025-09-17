@@ -1,8 +1,10 @@
 import rumps
 import sqlite3
+import sys, os
 from datetime import datetime, timedelta
-import os
 from pathlib import Path
+import webbrowser
+import tempfile
 
 # === DB konumu ===
 APP_NAME = "focustimes"
@@ -11,13 +13,20 @@ APP_SUPPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_FILE = str(APP_SUPPORT_DIR / "focustimes.db")
 
+def resource_path(relative_path):
+    """PyInstaller ile bundle içindeki dosya yolunu çöz."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+ICON_PATH = resource_path("focustimes.icns")
 
 class FocusTimesApp(rumps.App):
     def __init__(self):
         super(FocusTimesApp, self).__init__(
             "focustimes",
-            icon=None,
-            menu=["Start", "Finish", None, "Statistics", None],
+            icon=ICON_PATH,
+            menu=["Start", "Finish", None, "Statistics"],  # Quit zaten otomatik ekleniyor
         )
 
         self.start_time = None
@@ -98,7 +107,7 @@ class FocusTimesApp(rumps.App):
         self.end_time = None
         self.duration = None
 
-    # === Statistics ===
+    # === Statistics (HTML) ===
     @rumps.clicked("Statistics")
     def show_statistics(self, _):
         conn = sqlite3.connect(DB_FILE)
@@ -149,22 +158,48 @@ class FocusTimesApp(rumps.App):
         tag_stats = cur.fetchall()
         conn.close()
 
-        # === Rapor metni ===
-        stats_text = "=== TOTAL DURATIONS ===\n"
+        # === HTML üret ===
+        html = """
+        <html>
+        <head>
+            <title>focustimes Statistics</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h2 { margin-top: 30px; }
+                table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+                th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+                th { background-color: #f2f2f2; }
+            </style>
+        </head>
+        <body>
+            <h1>focustimes - Statistics</h1>
+            <h2>Total Durations</h2>
+            <table>
+                <tr><th>Period</th><th>Duration</th></tr>
+        """
         for label, seconds in totals.items():
-            stats_text += f"{label:<10}: {seconds//3600}h {(seconds%3600)//60}m\n"
+            html += f"<tr><td>{label}</td><td>{seconds//3600}h {(seconds%3600)//60}m</td></tr>"
+        html += "</table>"
 
-        stats_text += "\n=== TAG STATS ===\n"
+        html += """
+            <h2>Tag Stats (Top 50)</h2>
+            <table>
+                <tr><th>Tag</th><th>Today</th><th>This Week</th><th>This Month</th><th>This Year</th></tr>
+        """
         for tag, t_day, t_week, t_month, t_year in tag_stats:
-            stats_text += f"\n[{tag}]\n"
-            stats_text += f"Today     : {t_day//3600}h {(t_day%3600)//60}m\n"
-            stats_text += f"This Week : {t_week//3600}h {(t_week%3600)//60}m\n"
-            stats_text += f"This Month: {t_month//3600}h {(t_month%3600)//60}m\n"
-            stats_text += f"This Year : {t_year//3600}h {(t_year%3600)//60}m\n"
+            html += f"<tr><td>{tag}</td>"
+            html += f"<td>{t_day//3600}h {(t_day%3600)//60}m</td>"
+            html += f"<td>{t_week//3600}h {(t_week%3600)//60}m</td>"
+            html += f"<td>{t_month//3600}h {(t_month%3600)//60}m</td>"
+            html += f"<td>{t_year//3600}h {(t_year%3600)//60}m</td></tr>"
+        html += "</table></body></html>"
 
-        rumps.Window(
-            stats_text, "Statistics", default_text="", ok="OK", cancel="Close"
-        ).run()
+        # Geçici dosya oluştur ve tarayıcıda aç
+        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".html") as f:
+            f.write(html)
+            temp_path = f.name
+
+        webbrowser.open(f"file://{temp_path}")
 
 
 if __name__ == "__main__":
