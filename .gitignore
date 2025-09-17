@@ -88,3 +88,7 @@ cython_debug/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Generated icon files
+*.icns
+*.iconset/
